@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <title>hongbao</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="http://cdn.bootcss.com/bootstrap/3.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="http://cdn.bootcss.com/jquery/1.11.2/jquery.min.js"></script>
+    <script src="http://cdn.bootcss.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+	<style type="text/css">
+        .dot
+        {
+            background-color: Red;
+        }
+        td
+        {
+			background-color: Yellow;
+            border: 1px solid #000000;
+            width: 30px;
+            height: 30px;
+        }
+    </style>
+  </head>
+
+  <body>
+
+
+    <div class="container">
+		<br />
+		<br />
+		<div class="row">
+			<div class="col-md-6" id="grid-div">
+				
+			</div>
+			<div class="col-md-6">
+				Target:<br/>
+				<img src="target.jpg"></img>
+				<br/>
+				<button class="btn btn-lg btn-primary" id="submit-btn">Submit your solution!</button><br/>
+				<span id="status-span"></span>
+			</div>
+		</div>
+
+    </div>
+
+	<script>
+		grid = {};
+		var html = '<table id="grid-table">';
+		var rowCount = 8;
+		var colCount = 7;
+		var state = [];
+		var solution = [];
+		
+		for (var i = 0; i < rowCount; i++) {
+			html += '<tr>'
+			var arr = [];
+			
+			for (var j = 0; j < colCount; j++) {
+				html += '<td class="grid-pixel"  id="grid-' + i + '-' + j + '" data-row="' + i + '" data-col="' + j + '"></td>';
+				arr.push(1);
+			}
+			html += '</tr>';
+			state.push(arr);
+		}
+		
+		html += '</table>';
+		$('#grid-div').html(html); 
+		
+		function setPixel(row, col, v) {
+			var obj = $('#grid-' + row + '-' + col);
+			if (v) {
+				obj.addClass('dot');
+			} else {
+				obj.removeClass('dot');
+			}
+		}
+		
+		function reversePixel(row, col) {
+			if (row < 0 || col < 0) {
+				return;
+			}
+			if (row >= rowCount || col >= colCount) {
+				return;
+			}
+			state[row][col] = (state[row][col]) ? 0 : 1;
+			setPixel(row, col, state[row][col]);
+		}
+		
+		function updateGrid() {
+			for (var row = 0; row < rowCount; row++) {
+				for (var col = 0; col < colCount; col++) {
+					setPixel(row, col, state[row][col]);
+				}
+			}
+		}
+		
+		function doClick(row, col) {
+			reversePixel(row, col);
+			reversePixel(row - 1, col);
+			reversePixel(row + 1, col);
+			reversePixel(row, col - 1);
+			reversePixel(row, col + 1);
+			solution.push([row, col]);
+		}
+		
+		$.getJSON('start', function(data) {
+			state = data;
+			updateGrid();
+		});
+		
+		$('#submit-btn').click(function() {
+			$.post('verify', {solution: JSON.stringify(solution)}, function(data) {
+				alert(data);
+			});
+		});
+		
+		$('.grid-pixel').click(function(e) {
+			var obj = $(e.delegateTarget);
+			var row = parseInt(obj.data('row'));
+			var col = parseInt(obj.data('col'));
+			doClick(row, col);
+		});
+		
+		var startTime = Date.now();
+		setInterval(function() {
+			var diff = Date.now() - startTime;
+			var remain = 300 - (diff / 1000 | 0);
+			var text = '';
+			if (remain < 0) {
+				text = 'Time out.';
+			} else {
+				text = 'Time Limit: ' + remain;
+			}
+			$('#status-span').text(text);
+		}, 1000);
+		
+	</script>
+  </body>
+</html>
